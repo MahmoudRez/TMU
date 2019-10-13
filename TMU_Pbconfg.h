@@ -26,7 +26,7 @@
 typedef struct
 {
 	uint8 TIMER_ID;
-	uint8 TMU_Res_us;
+	uint16 TMU_Res_us;
 }TMU_ConfigType;
 
 
@@ -37,7 +37,7 @@ typedef struct
 	uint8 Periodicity;
 }TMU_SConfg;
 
-extern TMU_ConfigType TMU_init_cnfg;
-extern TMU_SConfg TMU_cnfg_arr;
+extern TMU_ConfigType *TMU_init_cnfg_ptr;
+extern TMU_SConfg TMU_cnfg_arr [NUM_OF_CONSUMER];
 
 #endif /* TMU_PBCONFG_H_ */
