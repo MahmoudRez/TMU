@@ -13,7 +13,7 @@
 
 typedef enum {T1,NUM_OF_Timers}Timers_Name;
 
-#define TIMER_MODE NORMAL_MODE
+#define TIMER_MODE CTC_MODE
 #define NORMAL_MODE 0
 #define CTC_MODE 1
 

@@ -256,9 +256,6 @@ uint8 TIMER_init(void)
 					retval = NOK;
 				}
 
-
-
-			}
 			break;
 
 #endif
@@ -635,6 +632,7 @@ uint8 TIMER_init(void)
 					default:
 						Init_check[Loop_index]=NOT_INITIALIZED;
 						retval = NOK;
+
 		}
 
 	}
@@ -792,6 +790,9 @@ uint8 TIMER_stop(uint8 TIMER_ID)
 			case TIMER2:
 
 				TCCR2 &= ~ 0x07;
+				break;
+			default:
+				funcStatus=NOK;
 				break;
 			}
 
