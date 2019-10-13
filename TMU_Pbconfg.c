@@ -6,7 +6,7 @@
  */
 #include "TMU_Pbconfg.h"
 
-TMU_ConfigType TMU_init_cnfg = {TIMER0,200};
+TMU_ConfigType TMU_init_cnfg = {TIMER0,500};
 TMU_ConfigType *TMU_init_cnfg_ptr = &TMU_init_cnfg;
 
 TMU_SConfg TMU_cnfg_arr [NUM_OF_CONSUMER] =

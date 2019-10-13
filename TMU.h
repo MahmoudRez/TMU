@@ -21,8 +21,9 @@ typedef enum
 
 
 EnmTMUError_t TMU_init(const TMU_ConfigType * ConfigPtr);
-uint8 TMU_Start_Timer(uint8 TIME_Delay,uint8 * EVENT_Consumer,uint8 Periodicity);
-uint8 TMU_Stop_Timer(uint8 * EVENT_Consumer);
+uint8 TMU_Start_Timer(uint16 TIME_Delay,void (* EVENT_Consumer)(void),uint8 Periodicity);
+uint8 TMU_Stop_Timer(void (*EVENT_Consumer)(void));
 uint8 TMU_Dispatch(void);
+uint8 TMU_DeInit(void);
 
 #endif /* TMU_H_ */

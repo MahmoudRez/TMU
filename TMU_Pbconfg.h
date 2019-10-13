@@ -20,7 +20,7 @@
 #define TIMER2 2
 #endif
 /****************NUM of Consumer**************/
-#define NUM_OF_CONSUMER 3
+#define NUM_OF_CONSUMER 4
 
 
 typedef struct
@@ -33,7 +33,7 @@ typedef struct
 typedef struct
 {
 	uint8 TIME_Delay;
-	uint8 * EVENT_Consumer;
+	void (*EVENT_Consumer)(void);
 	uint8 Periodicity;
 }TMU_SConfg;
 

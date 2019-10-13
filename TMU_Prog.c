@@ -10,6 +10,7 @@
 uint8 g_timerTick_flag=0;
 uint8 g_systemTick_flag=0;
 uint8 g_matchingTickCount=0;
+uint8 g_bufferSize=0;
 
 void TMU_callback(void)
 {
@@ -18,7 +19,8 @@ void TMU_callback(void)
 	{
 		g_systemTick_flag++;
 		g_timerTick_flag=0;
-		PORTA ^= 0xFF;
+		DDRC = 0xFF;
+		PORTC ^= 0xFF;
 	}
 }
 
@@ -27,6 +29,8 @@ uint8 TMU_init(const TMU_ConfigType * ConfigPtr)
 	uint8 timerIndx=0;
 	uint32 maxApplicableTickTime;
 	uint16 Tick_Time;
+	uint8 retval = OK;
+
 	for(timerIndx=0 ; timerIndx < MAX_NUM_OF_TIMERS ; timerIndx++)
 	{
 		if(TIMER_cnfg_arr[timerIndx].TIMER_ID == ConfigPtr->TIMER_ID)
@@ -90,33 +94,32 @@ uint8 TMU_init(const TMU_ConfigType * ConfigPtr)
 
 				break;
 
-			case CTC_MODE:
+				case CTC_MODE:
 
-				maxApplicableTickTime = Tick_Time*TIMER_cnfg_arr[timerIndx].OCR_ChA;
+					maxApplicableTickTime = Tick_Time*TIMER_cnfg_arr[timerIndx].OCR_ChA;
 
-				switch(ConfigPtr->TIMER_ID)
-				{
-				case TIMER0:
-					TIMER0_CMP_setCallBack(TMU_callback);
+					switch(ConfigPtr->TIMER_ID)
+					{
+					case TIMER0:
+						TIMER0_CMP_setCallBack(TMU_callback);
+						break;
+
+					case TIMER1:
+						TIMER1_CMPA_setCallBack(TMU_callback);
+						break;
+
+					case TIMER2:
+						TIMER2_CMP_setCallBack(TMU_callback);
+						break;
+					}
+
 					break;
-
-				case TIMER1:
-					TIMER1_CMPA_setCallBack(TMU_callback);
-					break;
-
-				case TIMER2:
-					TIMER2_CMP_setCallBack(TMU_callback);
-					break;
-				}
-
-				break;
 			}
 
 			timerIndx = MAX_NUM_OF_TIMERS+1;
 		}
 	}
-DDRC = 0xFF;
-PORTC = maxApplicableTickTime;
+
 	if(maxApplicableTickTime >= ConfigPtr->TMU_Res_us)
 	{
 		g_matchingTickCount = 1;
@@ -127,29 +130,103 @@ PORTC = maxApplicableTickTime;
 	}
 
 	TIMER_init();
-	TIMER_start(TIMER0);
-	/*	uint8 retval = OK;
-	return retval;*/
 
-}
-uint8 TMU_Start(uint8 TIME_Delay,uint8 * EVENT_Consumer,uint8 Periodicity)
-{
-	uint8 retval = OK;
 	return retval;
 
 }
-uint8 TMU_Stop(uint8 * EVENT_Consumer)
+
+
+uint8 TMU_Start_Timer(uint16 TIME_Delay,void (* EVENT_Consumer)(void),uint8 Periodicity)
 {
 	uint8 retval = OK;
+	static uint8 Start_Flag=0;
+	TIME_Delay=TIME_Delay/TMU_init_cnfg_ptr->TMU_Res_us;
+
+	if(TMU_cnfg_arr[g_bufferSize].EVENT_Consumer==NULL)
+	{
+		TMU_cnfg_arr[g_bufferSize].TIME_Delay=TIME_Delay;
+		TMU_cnfg_arr[g_bufferSize].EVENT_Consumer=EVENT_Consumer;
+		TMU_cnfg_arr[g_bufferSize].Periodicity=Periodicity;
+		g_bufferSize++;
+		if(Start_Flag==0)
+		{
+			retval=TIMER_start(TMU_init_cnfg_ptr->TIMER_ID);
+		}
+		else
+		{
+
+		}
+	}
+	else
+	{
+		retval=NOK;
+	}
+
+
+
+
+	return retval;
+
+
+}
+
+uint8 TMU_Stop_Timer(void (*EVENT_Consumer)(void))
+{
+	uint8 retval = OK;
+	uint8 loopIndx;
+
+	for(loopIndx=0 ; loopIndx<g_bufferSize ; loopIndx++)
+	{
+		if(TMU_cnfg_arr[loopIndx].EVENT_Consumer == EVENT_Consumer)
+		{
+			TMU_cnfg_arr[loopIndx] = TMU_cnfg_arr[g_bufferSize-1];
+			TMU_cnfg_arr[g_bufferSize-1].EVENT_Consumer=NULL;
+			g_bufferSize--;
+		}
+	}
+
 	return retval;
 
 }
-uint8 TMU_Dispatcher(void)
+
+uint8 TMU_Dispatch(void)
 {
 	uint8 retval = OK;
+	uint8 loopIndx=0;
+	static uint8 local_systemTick_flag=0;
+	void (*fncCall)(void);
+
+	if(local_systemTick_flag != g_systemTick_flag)
+	{
+		local_systemTick_flag = g_systemTick_flag;
+		for(loopIndx=0 ; loopIndx<g_bufferSize ; loopIndx++)
+		{
+			if( (g_systemTick_flag % TMU_cnfg_arr[loopIndx].TIME_Delay) == 0)
+			{
+				if(TMU_cnfg_arr[loopIndx].Periodicity ==PERIODIC)
+				{
+					fncCall = TMU_cnfg_arr[loopIndx].EVENT_Consumer;
+					fncCall();
+				}
+				else if(TMU_cnfg_arr[loopIndx].Periodicity == ONE_SHOT)
+				{
+					fncCall = TMU_cnfg_arr[loopIndx].EVENT_Consumer;
+					fncCall();
+					TMU_Stop_Timer(fncCall);
+				}
+			}
+			else
+			{
+
+			}
+
+		}
+	}
+
 	return retval;
 
 }
+
 uint8 TMU_DeInit(void)
 {
 	uint8 Status=OK;
